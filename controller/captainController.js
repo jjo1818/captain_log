@@ -1,62 +1,120 @@
-const captain = require('../models/captains')
+const CapLog = require('../models/captains')
 
 // The callback functions originally the second argument from -> app.get('/', () => {})
-module.exports.index = (req, res) => {
-    // Looks in the views folder for "captains/Index" and passes { captains } data to the view (kind of like a server props object)
-    res.render('captains/Index', { captains })
+module.exports.index = async (req, res) => {
+    try {
+        const capLog = await CapLog.find();
+        console.log(capLog)
+        // Looks in the views folder for "captains/Index" and passes { captains } data to the view (kind of like a server props object)
+    res.render('capLog/Index', { capLog })
+    } catch (err) {
+        console.log(err)
+        res.send(err.message)
+    }
+    
 }
-
 // Those anonymous callback functions now have names: "index" and "show"
-module.exports.show = (req, res) => {
-    res.render('captains/Show', { captain: captains[req.params.index] })
-}
+module.exports.show = async (req, res) => {
+    try {
+      const caplog = await CapLog.findById(req.params.id);
+      res.render("capLog/Show", { caplog });
+    } catch (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+  };
 
 // GET /captains/new
+// GET /capLog/new
 module.exports.new = (req, res) => {
-    res.render('captains/New')
-}
+    res.render("capLog/New");
+  };
 
-// POST /captains
-module.exports.create = (req, res) => {
-    console.log('POST /captains')
-    console.log(req.body)
-    if (req.body.readyToEat) {
-        req.body.readyToEat = true
+// POST /capLog
+module.exports.create = async (req, res) => {
+    console.log("POST /capLog");
+    if (req.body.shipIsBroken) {
+      req.body.shipIsBroken = true;
     } else {
-        req.body.readyToEat = false
+      req.body.shipIsBroken = false;
     }
-    captains.push(req.body)
-    res.redirect('/captains')
-}
+    try {
+      // use the model to interact with db and create a new document in the capLog collection
+      const result = await CapLog.create(req.body);
+      console.log(result);
+    } catch (err) {
+      console.log(err);
+    }
+  
+    res.redirect("/capLog");
+  };
+// DELETE /capLog/:name
+module.exports.delete = async(req, res) => {
+    try {
+      console.log("DELETE /capLog/:id");
+      await CapLog.findByIdAndDelete(req.params.id);
+      console.log(req.params.id);
+      res.redirect("/capLog");
+    } catch (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+  };
 
-// DELETE /captains/:name
-module.exports.delete = (req, res) => {
-    console.log('DELETE /captains/:name')
-    let index = captains.findIndex((item) => item.name === req.params.name)
-    captains.splice(index, 1)
-    res.redirect('/captains')
-} 
+// GET /capLog/:name/edit
+module.exports.edit = async (req, res) => {
+    console.log("GET /capLog/:id/edit");
+    try {
+      // const capLog = await CapLog.findById(req.params.id);
+      const caplog = await CapLog.findByIdAndUpdate(req.params.id, req.body);
+      res.render("capLog/Edit", { caplog });
+    } catch (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+  };
 
-// GET /captains/:name/edit
-module.exports.edit = (req, res) => {
-    console.log('GET /captains/:name/edit')
-    let index = captains.findIndex((item) => item.name === req.params.name)
-    res.render('captains/Edit', { captain: captains[index] })
-}
-
-// PUT /captains/:name
-module.exports.update = (req, res) => {
-    console.log('PUT /captains/:name')
-    console.log(req.body)
-
-    if (req.body.readyToEat) {
-        req.body.readyToEat = true
+  // PUT /capLog/:id
+  module.exports.update = async (req, res) => {
+    console.log("PUT /capLog/:id");
+    console.log(req.body);
+  
+    if (req.body.shipIsBroken) {
+      req.body.shipIsBroken = true;
     } else {
-        req.body.readyToEat = false
+      req.body.shipIsBroken = false;
     }
-
-    let index = captains.findIndex((item) => item.name === req.params.name)
-
-    captains[index] = req.body
-    res.redirect('/captains')
-}
+  
+    try {
+      // pass the id to find the document in the db and the form data (req.body) to update it
+      console.log('inside update')
+      console.log(req.body)
+      await CapLog.findByIdAndUpdate(req.params.id, req.body);
+      res.redirect(`/capLog/${req.params.id}`);
+    } catch (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+  };
+  module.exports.seed = async (req, res) => {
+    console.log("POST /capLog/seed");
+    try {
+      await CapLog.deleteMany({}); // Keep empty to delete everything
+      CapLog.create(capLog);
+      res.redirect("/capLog");
+    } catch (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+  };
+  
+  module.exports.clear = async (req, res) => {
+    console.log("DELETE /capLog/clear");
+    try {
+      await CapLog.deleteMany({});
+      res.redirect("/capLog");
+    } catch (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+  };            
